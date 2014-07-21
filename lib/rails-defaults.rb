@@ -79,8 +79,8 @@ module RailsDefaults
 
     alias :env :environment
 
-    def options opts= {}
-      opts.each do |method_name, value|
+    def options opts_var= {}
+      opts_var.each do |method_name, value|
         begin
           self.__send__ method_name.to_s.downcase, value
         rescue NoMethodError
@@ -101,23 +101,17 @@ module RailsDefaults
   module DefaultOptions
 
     def default_options
-
-      options_hash= {}
-      {
-          Port:         :port,
-          environment:  :environment,
-          daemonize:    :daemonize,
-          debugger:     :debugger,
-          server:       :server
-      }.each do |default_key,method_name|
-
-        #puts "#{default_key}: #{::RailsDefaults.__send__(method_name)}"
-        options_hash[default_key]= ::RailsDefaults.__send__ method_name
-
-      end
-
-      super.merge!( options_hash )
-
+      super.merge!(
+          {
+              Port:         :port,
+              environment:  :environment,
+              daemonize:    :daemonize,
+              debugger:     :debugger,
+              server:       :server
+          }.map { |default_key,method_name|
+            [ default_key, ::RailsDefaults.__send__(method_name)]
+          }.reduce({}){ |m,ary| m.merge!({ary[0] => ary[1]}) unless ary[1].nil? }
+      )
     end
 
     def server
